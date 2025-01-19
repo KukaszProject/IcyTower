@@ -1,10 +1,148 @@
+//#include <SFML/Graphics.hpp>
+//#include <iostream>
+//#include "Player.h"
+//#include "Platform.h"
+//
+//bool checkCollision(Player& player, Platform& platform) {
+//    sf::FloatRect playerBounds = player.sprite.getGlobalBounds();
+//    sf::FloatRect platformBounds = platform.sprite.getGlobalBounds();
+//
+//    if (playerBounds.intersects(platformBounds) && player.velocityY > 0) {
+//        player.isJumping = false;
+//        player.velocityY = 0;
+//        player.sprite.setPosition(player.sprite.getPosition().x, platform.sprite.getPosition().y - playerBounds.height);
+//        return true;
+//    }
+//
+//    return false;
+//}
+//
+//
+//int main()
+//{
+//    sf::RenderWindow window(sf::VideoMode(400, 600), "Icy Tower");
+//    window.setFramerateLimit(60);
+//    sf::Texture backgroundTexture;
+//    backgroundTexture.loadFromFile("bg.jpg");
+//
+//    sf::Sprite backgroundSprite;
+//    backgroundSprite.setTexture(backgroundTexture);
+//
+//    // Create a player and platforms
+//    Player player("hero.png");
+//    Platform platform1("building.jpg", 100, 420);
+//    Platform platform2("building.jpg", 200, 550);
+//    Platform platform3("building.jpg", 250, 300);
+//
+//    std::vector<Platform> platforms = { platform1, platform2, platform3 };
+//
+//    while (window.isOpen())
+//    {
+//        sf::Event event;
+//        while (window.pollEvent(event))
+//        {
+//            if (event.type == sf::Event::Closed)
+//                window.close();
+//        }
+//
+//        // Handle player input
+//        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+//            player.move(-1);
+//        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+//            player.move(1);
+//        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+//            player.jump();
+//
+//        // Update player and check collisions
+//        player.update();
+//        for (auto& platform : platforms) {
+//            checkCollision(player, platform);
+//        }
+//
+//        // Render everything
+//        window.clear();
+//        window.draw(backgroundSprite);
+//        window.draw(player.sprite);
+//        for (auto& platform : platforms) {
+//            window.draw(platform.sprite);
+//        }
+//        window.display();
+//    }
+//
+//    return 0;
+//}
+//
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
-#include "Platform.h"
-#include "Player.h"
+
+class Platform {
+public:
+    sf::Sprite sprite;
+    sf::Texture texture;
+
+    Platform(const std::string& textureFile, float x, float y) {
+        if (!texture.loadFromFile(textureFile)) {
+            std::cerr << "Failed to load platform texture!" << std::endl;
+        }
+        sprite.setTexture(texture);
+        sprite.setPosition(x, y);
+    }
+
+    void move(float dx, float dy) {
+        sprite.move(dx, dy);
+    }
+
+    bool isOutOfScreen(float windowHeight) {
+        return sprite.getPosition().y > windowHeight;
+    }
+};
+
+class Player {
+public:
+    sf::Sprite sprite;
+    sf::Texture texture;
+    float velocityY = 0.0f;
+    bool isJumping = false;
+    float gravity = 0.5f;
+    float jumpStrength = -12.0f;
+    float speed = 5.0f;
+
+    Player(const std::string& textureFile) {
+        if (!texture.loadFromFile(textureFile)) {
+            std::cerr << "Failed to load player texture!" << std::endl;
+        }
+        sprite.setTexture(texture);
+        sprite.setPosition(200, 500);  // Start position
+    }
+
+    void jump() {
+        if (!isJumping) {
+            velocityY = jumpStrength;
+            isJumping = true;
+        }
+    }
+
+    void move(float dirX) {
+        sprite.move(dirX * speed, 0);
+    }
+
+    void update() {
+        velocityY += gravity;
+        sprite.move(0, velocityY);
+
+        // Collision with the bottom of the screen
+        if (sprite.getPosition().y > 500) {
+            sprite.setPosition(sprite.getPosition().x, 500);
+            isJumping = false;
+        }
+    }
+};
+
+
 
 bool checkCollision(Player& player, Platform& platform) {
     sf::FloatRect playerBounds = player.sprite.getGlobalBounds();
@@ -66,10 +204,6 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-
-        //
-        // TRZEBA NAPRAWIC STARTOWANIE GRY!
-        //
 
         /*if (!isGameStarted) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
