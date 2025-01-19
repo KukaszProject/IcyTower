@@ -79,6 +79,7 @@
 #include <cstdlib>
 #include <ctime>
 
+
 class Platform {
 public:
     sf::Sprite sprite;
@@ -133,6 +134,12 @@ public:
     void update() {
         velocityY += gravity;
         sprite.move(0, velocityY);
+        if (sprite.getPosition().x > 400) {
+            sprite.setPosition(0, sprite.getPosition().y);
+        }
+        else if (sprite.getPosition().x < 0) {
+            sprite.setPosition(400, sprite.getPosition().y);
+        }
 
         // Collision with the bottom of the screen
         if (sprite.getPosition().y > 500) {
@@ -188,13 +195,33 @@ int main()
         return -1;
     }
 
-    bool isGameStarted = false;
+    bool isPaused = false;
+    bool gameStarted = false;
+    int checkForPause = 0;
 
     for (int i = 0; i < 5; ++i) {
         platforms.emplace_back("building.jpg", static_cast<float>(rand() % 300), 100.0f + i * 100);
     }
 
-    
+
+    sf::Font font;
+    if (!font.loadFromFile("consolab.ttf")) {
+        std::cerr << "Error loading font!" << std::endl;
+        return -1;
+    }
+
+    sf::Text startText, pauseText;
+    startText.setFont(font);
+    startText.setString("Press Up to Start");
+    startText.setCharacterSize(30);
+    startText.setFillColor(sf::Color::White);
+    startText.setPosition(50, 250);
+
+    pauseText.setFont(font);
+    pauseText.setString("Press Esc to resume");
+    pauseText.setCharacterSize(30);
+    pauseText.setFillColor(sf::Color::White);
+    pauseText.setPosition(50, 50);
 
     while (window.isOpen())
     {
@@ -203,30 +230,45 @@ int main()
         {
             if (event.type == sf::Event::Closed)
                 window.close();
+
+            if (!gameStarted && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up) {
+                gameStarted = true; // Start the game when Enter is pressed
+            }
+
+
+            // PAUZA NIE DZIALA 
+
+            //if (!isPaused && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+            //    isPaused = !isPaused; // Start the game when Enter is pressed
+            //}
+
+            
+           /* while (checkForPause % 2 == 1) {
+                window.display();
+                window.draw(pauseText);
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+                        checkForPause++;
+                }
+                continue;
+            }*/
+
+            
+
         }
 
-        /*if (!isGameStarted) {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
-                isGameStarted = true; // Start the game when Enter is pressed
-            }
-            // Draw the "Press Enter to Start" message or other UI elements
-            window.clear();
-            sf::Font font;
-            if (!font.loadFromFile("arial.ttf")) {  // Use any font you have
-                std::cerr << "Error loading font!" << std::endl;
-                return -1;
-            }
+        if (!gameStarted) {
+            //window.clear();
+            window.draw(startText);
+            window.display();
+            continue;
+        }
 
-            sf::Text text;
-            text.setFont(font);
-            text.setString("Press Enter to Start");
-            text.setCharacterSize(30);
-            text.setFillColor(sf::Color::White);
-            text.setPosition(50, 250);
-
-            window.draw(text); // Display the start message
-            window.display();// Skip the rest of the loop and wait for Enter key press
-        }*/
+        //if (isPaused) {
+        //    //window.clear();
+        //    window.draw(pauseText);
+        //    window.display();
+        //    continue;
+        //}
 
         // Handle player input
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
@@ -234,7 +276,7 @@ int main()
             player.texture.loadFromFile("hero_j_l.png");
             player.sprite.setTexture(player.texture);
         }
-            
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
             player.move(1);
             player.texture.loadFromFile("hero_j_r.png");
@@ -259,17 +301,14 @@ int main()
         platforms.erase(std::remove_if(platforms.begin(), platforms.end(),
             [&window](Platform& p) { return p.isOutOfScreen(window.getSize().y); }),
             platforms.end());
-
+        
         // Move platforms down as the player moves up
         if (player.sprite.getPosition().y < 600) {
             for (auto& platform : platforms) {
-                platform.move(0, 4);  // Move platforms down
+                if (gameStarted) {
+                    platform.move(0, 4);  // Move platforms down
+                }
             }
-        }
-
-        if (player.sprite.getPosition().y == 570)
-        {
-            isGameStarted = false;
         }
 
         // Render everything
