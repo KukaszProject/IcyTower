@@ -137,6 +137,50 @@ bool checkCollision(Player& player, Platform& platform) {
     return false;
 }
 
+
+class Background {
+public:
+    sf::Sprite sprite1, sprite2;
+    static sf::Texture texture;
+
+    Background(float windowHeight) {
+        sprite1.setTexture(texture);
+        sprite2.setTexture(texture);
+
+        // Set the initial positions for the two backgrounds
+        sprite1.setPosition(0, 0);
+        sprite2.setPosition(0, +windowHeight);
+    }
+
+    static bool loadTexture(const std::string& textureFile) {
+        if (!texture.loadFromFile(textureFile)) {
+            std::cerr << "Failed to load background texture!" << std::endl;
+            return false;
+        }
+        return true;
+    }
+    void move(float dy, float windowHeight) {
+        // Move both backgrounds
+        sprite1.move(0, dy);
+        sprite2.move(0, dy);
+
+        // If background 1 moves off-screen, reset it
+        if (sprite1.getPosition().y >= windowHeight) {
+            sprite1.setPosition(0, sprite2.getPosition().y - windowHeight);
+        }
+
+        // If background 2 moves off-screen, reset it
+        if (sprite2.getPosition().y >= windowHeight) {
+            sprite2.setPosition(0, sprite1.getPosition().y - windowHeight);
+        }
+    }
+
+    void draw(sf::RenderWindow& window) {
+        window.draw(sprite1);
+        window.draw(sprite2);
+    }
+};
+
 void generatePlatforms(std::vector<Platform>& platforms, float windowHeight, Difficulty difficulty, Player player) {
     float x = static_cast<float>(rand() % 300); // Random x position
     float y = -20; // Just above the screen
@@ -164,6 +208,8 @@ void generatePlatforms(std::vector<Platform>& platforms, float windowHeight, Dif
     }
 }
 
+sf::Texture Background::texture;
+
 int main() {
     srand(static_cast<unsigned>(time(0)));
     clock_t start;
@@ -174,7 +220,13 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(400, 600), "Icy Tower");
     window.setFramerateLimit(60);
 
-    if (!Platform::loadTexture("building.jpg")) {
+    if (!Background::loadTexture("bg.png")) {
+        return -1;
+    }
+
+    Background background(window.getSize().y);
+
+    if (!Platform::loadTexture("platform.png")) {
         return -1;
     }
 
@@ -194,10 +246,10 @@ int main() {
     // Menu items
     sf::Text menuTitle, easyOption, mediumOption, hardOption, gameOverText, startMessage;
     menuTitle.setFont(font);
-    menuTitle.setString("Select Difficulty");
-    menuTitle.setCharacterSize(30);
+    menuTitle.setString("Icy Tower");
+    menuTitle.setCharacterSize(50);
     menuTitle.setFillColor(sf::Color::White);
-    menuTitle.setPosition(70, 100);
+    menuTitle.setPosition(100, 100);
 
     easyOption.setFont(font);
     easyOption.setString("Easy");
@@ -218,7 +270,7 @@ int main() {
     startMessage.setString("Press any key to start.");
     startMessage.setCharacterSize(20);
     startMessage.setFillColor(sf::Color::White);
-    startMessage.setPosition(90, 400);
+    startMessage.setPosition(60, 500);
 
     gameOverText.setFont(font);
     gameOverText.setString("Game Over! Press Enter to return to the Menu.");
@@ -235,12 +287,12 @@ int main() {
     resumeOption.setFont(font);
     resumeOption.setString("Resume");
     resumeOption.setCharacterSize(25);
-    resumeOption.setPosition(150, 200);
+    resumeOption.setPosition(150, 100);
 
     mainMenuOption.setFont(font);
     mainMenuOption.setString("Main Menu");
     mainMenuOption.setCharacterSize(25);
-    mainMenuOption.setPosition(150, 250);
+    mainMenuOption.setPosition(150, 150);
 
     scoreText.setFont(font);
     scoreText.setString("Score" + score);
@@ -322,7 +374,6 @@ int main() {
             easyOption.setFillColor(selectedOption == 0 ? sf::Color::Red : sf::Color::White);
             mediumOption.setFillColor(selectedOption == 1 ? sf::Color::Red : sf::Color::White);
             hardOption.setFillColor(selectedOption == 2 ? sf::Color::Red : sf::Color::White);
-
             window.draw(menuTitle);
             window.draw(easyOption);
             window.draw(mediumOption);
@@ -378,12 +429,15 @@ int main() {
             if (player.fellFromPlatform()) {
                 gameState = GAME_OVER;
             }
+            background.move(1.0f, window.getSize().y);
+            background.draw(window);
 
             window.draw(scoreText);
             window.draw(player.sprite);
             for (auto& platform : platforms) {
                 window.draw(platform.sprite);
             }
+
         }
         else if (gameState == PAUSE) {
             resumeOption.setFillColor(pauseMenuOption == 0 ? sf::Color::Red : sf::Color::White);
