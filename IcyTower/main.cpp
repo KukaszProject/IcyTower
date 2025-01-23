@@ -14,10 +14,11 @@ enum Difficulty { EASY, MEDIUM, HARD };
 
 class Platform {
 public:
-    sf::Sprite sprite;
+    sf::Sprite sprite, firstPlatformSprite;
     static sf::Texture texture1;
     static sf::Texture texture2;
     static sf::Texture texture3;
+    static sf::Texture texture4;
 
     Platform(float x, float y) {
         // Randomly select a texture for the platform
@@ -56,6 +57,7 @@ public:
 sf::Texture Platform::texture1;
 sf::Texture Platform::texture2;
 sf::Texture Platform::texture3;
+sf::Texture Platform::texture4;
 
 class Player {
 public:
@@ -162,9 +164,14 @@ bool checkCollision(Player& player, Platform& platform, bool isGameActive) {
     return false;
 }
 
+void generateFirstPlatform(Platform platform, float windowHeight) {
+    float x;
+    float y = 550;
+}
+
 void generateInitialPlatforms(std::vector<Platform>& platforms, float windowHeight) {
     float x;
-    float y = 550; // Starting Y position for platforms
+    float y = 100; // Starting Y position for platforms
     for (int i = 0; i < 6; ++i) {
         // Ensure platforms are spaced out
         if (i == 0) {
@@ -175,7 +182,7 @@ void generateInitialPlatforms(std::vector<Platform>& platforms, float windowHeig
         }
 
         platforms.emplace_back(x, y);
-        y -= 100; // Increase Y position for the next platform
+        y += 100; // Increase Y position for the next platform
     }
 }
 
@@ -335,6 +342,7 @@ int main() {
         return -1;
     }
 
+
     // Load different skins (textures)
     sf::Texture skin1, skin2, skin3;
     if (!skin1.loadFromFile("hero.png") || !skin2.loadFromFile("hero1.png") || !skin3.loadFromFile("hero2.png")) {
@@ -474,6 +482,8 @@ int main() {
 
     std::string playerName; // Variable to store player nickname
 
+
+
     // Generate initial platforms
     generateInitialPlatforms(platforms, window.getSize().y);
 
@@ -537,7 +547,7 @@ int main() {
                     else if (event.key.code == sf::Keyboard::Enter) {
                         // Apply selected skin and start the game
                         player.sprite.setTexture(skins[selectedSkinIndex]);
-                        gameState = GAME;
+                        gameState = MENU;
                     }
                 }
             }

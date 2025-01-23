@@ -18,3 +18,21 @@ julka 14 0
 Julka 4 1
  2 2
  25 2
+sadd 3 0
+ 3 0
+ 1 0
+asd 6 1
+ 1 2
+sad 1 2
+dsf 2 0
+  1 2
+ 1 2
+ 1 0
+  2 1
+  2 0
+ 1 0
+ 1 0
+ 2 1
+asds 3 0
+asdas 4 1
+sad 8 2
