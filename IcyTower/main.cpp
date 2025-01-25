@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <vector>
 #include <cstdlib>
@@ -7,9 +8,8 @@
 #include <sstream>
 #include <algorithm>
 
-enum GameState { MENU, PRESTART, SKIN_SELECTION, GAME, PAUSE, GAME_OVER };
+enum GameState { MENU, SKIN_SELECTION, GAME, PAUSE, GAME_OVER };
 
-// Difficulty settings
 enum Difficulty { EASY, MEDIUM, HARD };
 
 class Platform {
@@ -18,21 +18,20 @@ public:
     static sf::Texture texture1;
     static sf::Texture texture2;
     static sf::Texture texture3;
-    static sf::Texture texture4;
+    static sf::Texture firstPlatform;
 
     Platform(float x, float y) {
-        // Randomly select a texture for the platform
         int randomTexture = rand() % 3;
-        if (randomTexture == 0) {
-            sprite.setTexture(texture1);
-        }
-        else if (randomTexture == 1) {
-            sprite.setTexture(texture2);
-        }
-        else {
-            sprite.setTexture(texture3);
-        }
-        sprite.setPosition(x, y);
+            if (randomTexture == 0) {
+                sprite.setTexture(texture1);
+            }
+            else if (randomTexture == 1) {
+                sprite.setTexture(texture2);
+            }
+            else {
+                sprite.setTexture(texture3);
+            }
+            sprite.setPosition(x, y);
     }
 
     void move(float dx, float dy) {
@@ -57,7 +56,7 @@ public:
 sf::Texture Platform::texture1;
 sf::Texture Platform::texture2;
 sf::Texture Platform::texture3;
-sf::Texture Platform::texture4;
+sf::Texture Platform::firstPlatform;
 
 class Player {
 public:
@@ -68,7 +67,7 @@ public:
     float gravity = 0.5f;
     float jumpStrength = -12.0f;
     float speed = 5.0f;
-    float startingY = 500.0f; // Starting Y position of the player
+    float startingY = 550.0f;
 
     int platformCount = 0;
 
@@ -76,8 +75,8 @@ public:
         if (!texture.loadFromFile("hero.png")) {
             std::cerr << "Failed to load player textures!" << std::endl;
         }
-        sprite.setTexture(texture); // Default texture facing right
-        sprite.setPosition(200, startingY);  // Start position
+        sprite.setTexture(texture);
+        sprite.setPosition(200, startingY);
     }
 
     void jump(Difficulty dif) {
@@ -85,33 +84,23 @@ public:
             if (!isJumping) {
                 velocityY = jumpStrength;
                 isJumping = true;
-                //sprite.setTexture(textureJump); // Set jump texture
             }
         }
         else if (dif == MEDIUM) {
             if (!isJumping) {
                 velocityY = jumpStrength * 0.8f;
                 isJumping = true;
-                //sprite.setTexture(textureJump); // Set jump texture
             }
         }
         else if (dif == HARD) {
             if (!isJumping) {
-                velocityY = jumpStrength * 0.62f;
+                velocityY = jumpStrength * 0.6f;
                 isJumping = true;
-                //sprite.setTexture(textureJump); // Set jump texture
             }
         }
     }
 
     void move(float dirX, Difficulty dif) {
-        //if (dirX < 0) {
-        //    //sprite.setTexture(textureLeft); // Set texture facing left
-        //}
-        //else if (dirX > 0) {
-        //    //sprite.setTexture(textureRight); // Set texture facing right
-        //}
-
         if (dif == EASY) {
             sprite.move(dirX * speed, 0);
         }
@@ -119,7 +108,7 @@ public:
             sprite.move(dirX * speed * 0.8f, 0);
         }
         else if (dif == HARD) {
-            sprite.move(dirX * speed * 0.5f, 0);
+            sprite.move(dirX * speed * 0.63f, 0);
         }
     }
 
@@ -142,14 +131,13 @@ public:
         }
     }
 
-    // Check if the player fell below the starting Y position
     bool fellFromPlatform() {
         return sprite.getPosition().y >= startingY;
     }
 };
 
 bool checkCollision(Player& player, Platform& platform, bool isGameActive) {
-    if (!isGameActive) return false; // Don't check collision if the game is not active
+    if (!isGameActive) return false;
 
     sf::FloatRect playerBounds = player.sprite.getGlobalBounds();
     sf::FloatRect platformBounds = platform.sprite.getGlobalBounds();
@@ -171,46 +159,44 @@ void generateFirstPlatform(Platform platform, float windowHeight) {
 
 void generateInitialPlatforms(std::vector<Platform>& platforms, float windowHeight) {
     float x;
-    float y = 100; // Starting Y position for platforms
+    float y = 100;
     for (int i = 0; i < 6; ++i) {
-        // Ensure platforms are spaced out
         if (i == 0) {
             x = 170;
         }
         else {
-            x = static_cast<float>(rand() % 300); // Random x position
+            x = static_cast<float>(rand() % 300);
         }
 
         platforms.emplace_back(x, y);
-        y += 100; // Increase Y position for the next platform
+        y += 100;
     }
 }
 
 void generatePlatforms(std::vector<Platform>& platforms, float windowHeight, Difficulty difficulty) {
-    float x = static_cast<float>(rand() % 300); // Random x position
-    float y = -20; // Just above the screen
+    float x = static_cast<float>(rand() % 300);
+    float y = -20;
     platforms.emplace_back(x, y);
 }
 
 struct ScoreEntry {
     std::string name;
     int score;
-    Difficulty difficulty; // Add difficulty information
+    Difficulty difficulty;
 
     bool operator<(const ScoreEntry& other) const {
-        return score < other.score; // Sort in ascending order
+        return score < other.score;
     }
 
-    // Add comparison operator for sorting
     bool operator>(const ScoreEntry& other) const {
-        return score > other.score; // Sort in descending order
+        return score > other.score;
     }
 };
 
 void saveScore(const std::string& name, int score, Difficulty difficulty) {
     std::ofstream file("score.txt", std::ios::app);
     if (file.is_open()) {
-        file << name << " " << score << " " << static_cast<int>(difficulty) << std::endl; // Save score with difficulty
+        file << name << " " << score << " " << static_cast<int>(difficulty) << std::endl;
         file.close();
     }
 }
@@ -225,12 +211,11 @@ std::vector<ScoreEntry> loadScores() {
         ScoreEntry entry;
         int difficulty;
         if (iss >> entry.name >> entry.score >> difficulty) {
-            entry.difficulty = static_cast<Difficulty>(difficulty); // Assign difficulty
+            entry.difficulty = static_cast<Difficulty>(difficulty);
             scores.push_back(entry);
         }
     }
 
-    // Sort scores in descending order
     std::sort(scores.begin(), scores.end(), std::greater<ScoreEntry>());
     return scores;
 }
@@ -245,16 +230,14 @@ void displayTopScores(sf::RenderWindow& window, const std::vector<ScoreEntry>& s
     sf::Text scoreText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(20);
-    scoreText.setPosition(260, 440); // Position in the lower left corner
+    scoreText.setPosition(260, 440);
 
     std::ostringstream oss;
     oss << "Top Scores:\n";
 
-    // Variables to store top scores
     std::string easyName, mediumName, hardName;
     int easyScore = -1, mediumScore = -1, hardScore = -1;
 
-    // Collecting top scores
     for (const auto& entry : scores) {
         if (entry.difficulty == EASY && (easyScore == -1 || entry.score > easyScore)) {
             easyScore = entry.score;
@@ -270,7 +253,6 @@ void displayTopScores(sf::RenderWindow& window, const std::vector<ScoreEntry>& s
         }
     }
 
-    // Create and draw text for scores
     if (easyScore != -1) {
         sf::Text easyText;
         sf::Text easyLabel;
@@ -279,13 +261,13 @@ void displayTopScores(sf::RenderWindow& window, const std::vector<ScoreEntry>& s
         easyLabel.setString("Easy:");
         easyLabel.setFillColor(sf::Color::Red);
         easyLabel.setCharacterSize(20);
-        easyLabel.setPosition(20, 450); // Set position
+        easyLabel.setPosition(20, 450);
 
         easyText.setFont(font);
         easyText.setString(easyName + " : " + std::to_string(easyScore));
         easyText.setFillColor(sf::Color::White);
         easyText.setCharacterSize(18);
-        easyText.setPosition(20, 470); // Set position
+        easyText.setPosition(20, 470);
         window.draw(easyText);
         window.draw(easyLabel);
     }
@@ -298,13 +280,13 @@ void displayTopScores(sf::RenderWindow& window, const std::vector<ScoreEntry>& s
         mediumLabel.setString("Medium:");
         mediumLabel.setFillColor(sf::Color::Red);
         mediumLabel.setCharacterSize(20);
-        mediumLabel.setPosition(20, 495); // Set position
+        mediumLabel.setPosition(20, 495);
 
         mediumText.setFont(font);
         mediumText.setString(mediumName + ": " + std::to_string(mediumScore));
         mediumText.setFillColor(sf::Color::White);
         mediumText.setCharacterSize(18);
-        mediumText.setPosition(20, 515); // Set position
+        mediumText.setPosition(20, 515);
         window.draw(mediumText);
         window.draw(mediumLabel);
     }
@@ -317,19 +299,18 @@ void displayTopScores(sf::RenderWindow& window, const std::vector<ScoreEntry>& s
         hardLabel.setString("Hard:");
         hardLabel.setFillColor(sf::Color::Red);
         hardLabel.setCharacterSize(20);
-        hardLabel.setPosition(20, 540); // Set position
+        hardLabel.setPosition(20, 540);
 
         hardText.setFont(font);
         hardText.setString(hardName + ": " + std::to_string(hardScore));
         hardText.setFillColor(sf::Color::White);
         hardText.setCharacterSize(18);
-        hardText.setPosition(20, 560); // Set position
+        hardText.setPosition(20, 560);
         window.draw(hardText);
         window.draw(hardLabel);
     }
 
     scoreText.setString(oss.str());
-    //window.draw(scoreText);
 }
 
 int main() {
@@ -337,30 +318,41 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(400, 600), "Icy Tower");
     window.setFramerateLimit(60);
 
-    // Load platform textures
+    sf::SoundBuffer jumpBuffer, mainMenu, enterGame, gameOver, switchS;
+    jumpBuffer.loadFromFile("jump.wav");
+    mainMenu.loadFromFile("mainMenu.mp3");
+    enterGame.loadFromFile("enter.mp3");
+    gameOver.loadFromFile("GameOver.wav");
+    switchS.loadFromFile("switch.mp3");
+
+    sf::Sound jumpSound, mainSound, enterSound, gameOverSound, switchSound;
+    jumpSound.setBuffer(jumpBuffer);
+    mainSound.setBuffer(mainMenu);
+    enterSound.setBuffer(enterGame);
+    gameOverSound.setBuffer(gameOver);
+    switchSound.setBuffer(switchS);
+    mainSound.setVolume(10);
+    mainSound.getLoop();
+    mainSound.play();
+
     if (!Platform::loadTextures("platform.png", "perla.png", "romper.png")) {
         return -1;
     }
 
-
-    // Load different skins (textures)
     sf::Texture skin1, skin2, skin3;
     if (!skin1.loadFromFile("hero.png") || !skin2.loadFromFile("hero1.png") || !skin3.loadFromFile("hero2.png")) {
         std::cerr << "Failed to load skin textures!" << std::endl;
         return -1;
     }
 
-    // Store skins in a vector for easy cycling
     std::vector<sf::Texture> skins = { skin1, skin2, skin3 };
 
     Player player;
     std::vector<Platform> platforms;
 
-    // Game state and skin selection variables
     GameState gameState = MENU;
     int selectedSkinIndex = 1;
 
-    // Text for skin selection menu
     sf::Font font;
     if (!font.loadFromFile("ThaleahFat.ttf")) {
         std::cerr << "Error loading font!" << std::endl;
@@ -375,12 +367,10 @@ int main() {
     instructionText.setFillColor(sf::Color::White);
     instructionText.setPosition(40, 400);
 
-    // Player sprite for preview in the skin selection menu
     sf::Sprite previewSprite;
     previewSprite.setTexture(skins[selectedSkinIndex]);
     previewSprite.setPosition(170, 200);
 
-    // Load background texture
     sf::Texture backgroundTexture, mainMenuTexture, scoreLabelTexture, gameOverTexture, pauseTexture, skinChooseTexture;
     if (!backgroundTexture.loadFromFile("bgg.jpg")) {
         std::cerr << "Failed to load background texture!" << std::endl;
@@ -398,16 +388,15 @@ int main() {
     sf::Sprite gameOverSprite(gameOverTexture);
     sf::Sprite pauseSprite(pauseTexture);
     sf::Sprite skinChooseSprite(skinChooseTexture);
-    float backgroundY = 0; // Y position of the background
+    float backgroundY = 0;
 
     Difficulty difficulty = EASY;
 
-    // Flag to check if the game is moving
     bool isMoving = false;
-    bool isGameActive = false; // Flag to control game activity
+    bool isGameActive = false;
 
-    // Menu items
-    sf::Text menuTitle, easyOption, mediumOption, hardOption, gameOverText, startMessage, nickLabel, skinSelection;
+
+    sf::Text menuTitle, easyOption, mediumOption, hardOption, gameOverText, startMessage, nickLabel, skinSelection, resumeOption, mainMenuOption, scoreText;
     menuTitle.setFont(font);
     menuTitle.setString("Select Difficulty");
     menuTitle.setCharacterSize(30);
@@ -452,10 +441,6 @@ int main() {
     nickLabel.setFillColor(sf::Color::Green);
     nickLabel.setPosition(100, 220);
 
-    int selectedOption = 0;
-
-    // Pause menu items
-    sf::Text resumeOption, mainMenuOption, scoreText;
     resumeOption.setFont(font);
     resumeOption.setString("Resume");
     resumeOption.setCharacterSize(30);
@@ -471,20 +456,15 @@ int main() {
     scoreText.setCharacterSize(25);
     scoreText.setPosition(10, 5);
 
-    int pauseMenuOption = 0;  // 0 = Resume, 1 = Main Menu
-    bool firstJump = false;   // Flag to check if the player has jumped at least once
-    bool scoreStarted = false; // Flag to check if scoring has started
-
-    // Clock for timing
     sf::Clock clock;
-    int score = 0; // Variable to store points
-    float elapsedTime = 0.0f; // Variable to store elapsed time
+    int selectedOption = 0;
+    int pauseMenuOption = 0;
+    bool firstJump = false;
+    bool scoreStarted = false;
+    int score = 0;
+    float elapsedTime = 0.0f;
+    std::string playerName;
 
-    std::string playerName; // Variable to store player nickname
-
-
-
-    // Generate initial platforms
     generateInitialPlatforms(platforms, window.getSize().y);
 
     while (window.isOpen()) {
@@ -497,15 +477,17 @@ int main() {
                 if (event.type == sf::Event::KeyPressed) {
                     if (event.key.code == sf::Keyboard::Up) {
                         selectedOption = (selectedOption - 1 + 4) % 4;
+                        switchSound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Down) {
                         selectedOption = (selectedOption + 1) % 4;
+                        switchSound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Enter) {
                         if (selectedOption == 0) difficulty = EASY;
                         else if (selectedOption == 1) difficulty = MEDIUM;
                         else if (selectedOption == 2) difficulty = HARD;
-
+                        enterSound.play();
                         player.sprite.setPosition(200, player.startingY);  // Reset player position
                         gameState = GAME; // Change to PRESTART state, waiting for any key to begin
                         backgroundY = 0; // Reset background position
@@ -516,16 +498,6 @@ int main() {
                         isGameActive = true; // Activate game
                     }
                     if (event.key.code == sf::Keyboard::Enter && selectedOption == 3) gameState = SKIN_SELECTION;
-                }
-            }
-            else if (gameState == PRESTART) {
-                // Wait for any key to start the game
-                if (event.type == sf::Event::KeyPressed) {
-                    score = 0; // Reset score at the beginning of the game
-                    elapsedTime = 0.0f; // Reset elapsed time
-                    scoreStarted = false; // Reset scoring flag
-                    isGameActive = true; // Activate game
-                    gameState = GAME;  // Switch to the actual GAME state on key press
                 }
             }
             else if (gameState == GAME) {
@@ -539,9 +511,11 @@ int main() {
                     if (event.key.code == sf::Keyboard::Right) {
                         selectedSkinIndex = (selectedSkinIndex + 1) % skins.size();
                         previewSprite.setTexture(skins[selectedSkinIndex]);
+                        switchSound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Left) {
                         selectedSkinIndex = (selectedSkinIndex - 1 + skins.size()) % skins.size();
+                        switchSound.play();
                         previewSprite.setTexture(skins[selectedSkinIndex]);
                     }
                     else if (event.key.code == sf::Keyboard::Enter) {
@@ -555,9 +529,11 @@ int main() {
                 if (event.type == sf::Event::KeyPressed) {
                     if (event.key.code == sf::Keyboard::Up) {
                         pauseMenuOption = (pauseMenuOption - 1 + 2) % 2;
+                        switchSound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Down) {
                         pauseMenuOption = (pauseMenuOption + 1) % 2;
+                        switchSound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Enter) {
                         if (pauseMenuOption == 0) {
@@ -636,32 +612,24 @@ int main() {
             window.draw(hardOption);
             window.draw(skinSelection);
 
-            // Display top scores
             std::vector<ScoreEntry> scores = loadScores();
             displayTopScores(window, scores);
         }
-        else if (gameState == PRESTART) {
-            window.draw(mainMenuSprite);
-            window.draw(startMessage);  // Show "Press any key to start" message
-        }
         else if (gameState == GAME) {
-            // Scoring every second, only if scoring has started
             if (!scoreStarted) {
-                window.draw(startMessage);  // Show "Press any key to start" message
+                window.draw(startMessage);
             }
 
             if (scoreStarted) {
-                elapsedTime += clock.restart().asSeconds(); // Restart clock and add time to elapsedTime
+                elapsedTime += clock.restart().asSeconds();
                 if (elapsedTime >= 1.0f) {
-                    score += 1; // Add points
-                    elapsedTime = 0.0f; // Reset time
+                    score += 1;
+                    elapsedTime = 0.0f;
                 }
             }
 
-            // Display score
             scoreText.setString("Score: " + std::to_string(score));
 
-            // Change score color based on difficulty
             if (score > 0) {
                 if (difficulty == EASY && score > 15) {
                     scoreText.setFillColor(sf::Color::Green);
@@ -677,10 +645,12 @@ int main() {
                 }
             }
 
-            // Handle player input for movement
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) player.move(-1, difficulty);
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) player.move(1, difficulty);
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+                if (!player.isJumping) {
+                    jumpSound.play();
+                }
                 player.jump(difficulty);
                 firstJump = true; // Set the flag to true when the player jumps
                 isMoving = true;  // Start moving the background and platforms
@@ -724,13 +694,14 @@ int main() {
             // Check if the player fell below the starting position and if the player has jumped at least once
             if (firstJump && player.fellFromPlatform()) {
                 gameState = GAME_OVER;
+                gameOverSound.play();
             }
 
-            window.draw(scoreText);
             window.draw(player.sprite);
             for (auto& platform : platforms) {
                 window.draw(platform.sprite);
             }
+            window.draw(scoreText);
         }
         else if (gameState == PAUSE) {
             window.draw(pauseSprite);
